@@ -4,10 +4,11 @@
 #include <WiFi.h>
 #include <HttpClient.h>
 #include <ArduinoJson.h>
-#include "secrets.h"
-#include "ca_cert.h"
 #include "time.h"
 #include <map>
+
+#include "secrets.h"
+#include "ca_cert.h"
 
 #define PIN 4
 
@@ -159,5 +160,5 @@ void loop()
 
   draw_contribution_graph(seven_weeks_ago, now);
 
-  delay(60 * 60); // refresh every hour
+  delay(60 * 60 * 1000); // refresh every hour
 }

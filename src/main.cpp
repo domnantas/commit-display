@@ -7,6 +7,7 @@
 #include "secrets.h"
 #include "ca_cert.h"
 #include "time.h"
+#include <map>
 
 #define PIN 4
 
@@ -19,9 +20,16 @@ Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(8, 8, PIN,
 
 const uint16_t color_level_0 = matrix.Color(0, 0, 0);
 const uint16_t color_level_1 = matrix.Color(0, 5, 0);
-const uint16_t color_level_2 = matrix.Color(0, 20, 0);
-const uint16_t color_level_3 = matrix.Color(0, 100, 0);
-const uint16_t color_level_4 = matrix.Color(0, 160, 0);
+const uint16_t color_level_2 = matrix.Color(0, 30, 0);
+const uint16_t color_level_3 = matrix.Color(0, 90, 0);
+const uint16_t color_level_4 = matrix.Color(0, 180, 0);
+
+std::map<String, uint16_t> color_map = {
+    {"NONE", color_level_0},
+    {"FIRST_QUARTILE", color_level_1},
+    {"SECOND_QUARTILE", color_level_2},
+    {"THIRD_QUARTILE", color_level_3},
+    {"FOURTH_QUARTILE", color_level_4}};
 
 String get_ISO8601_time(time_t timestamp)
 {
@@ -107,34 +115,54 @@ void setup()
   delay(5000);
 
   time_t timestamp_now = time(nullptr);
-  time_t timestamp_eight_weeks_ago = timestamp_now - 8 * 7 * 24 * 60 * 60;
+  time_t timestamp_seven_weeks_ago = timestamp_now - 7 * 7 * 24 * 60 * 60;
 
   String today = get_ISO8601_time(timestamp_now);
-  String eight_days_ago = get_ISO8601_time(timestamp_eight_weeks_ago);
+  String seven_weeks_ago = get_ISO8601_time(timestamp_seven_weeks_ago);
 
-  JsonArray weeks = get_github_contribution_weeks(eight_days_ago, today);
+  JsonArray weeks = get_github_contribution_weeks(seven_weeks_ago, today);
+
+  matrix.fillScreen(0);
+
+  unsigned short week_index = 0;
 
   for (JsonObject week : weeks)
   {
-    JsonArray contributionDays = week["contributionDays"];
+    JsonArray contribution_days = week["contributionDays"];
 
-    for (JsonObject contributionDay : contributionDays)
+    Serial.print("week");
+    Serial.println(week_index);
+
+    unsigned short day_index = 0;
+
+    for (JsonObject contribution_day : contribution_days)
     {
-      String contributionLevel = contributionDay["contributionLevel"];
-      String date = contributionDay["date"];
-      Serial.println(contributionLevel);
+      Serial.print("day");
+      Serial.println(day_index);
+      String contribution_level = contribution_day["contributionLevel"];
+      String date = contribution_day["date"];
+      Serial.println(date);
+      Serial.println(contribution_level);
+      uint16_t color_level = color_map.at(contribution_level);
+      Serial.println(color_level);
+      matrix.drawPixel(week_index, 7 - day_index, color_level);
+
+      ++day_index;
     }
+    ++week_index;
   }
+
+  matrix.show();
 }
 
 void loop()
 {
-  matrix.fillScreen(0);
-  matrix.drawPixel(0, 0, color_level_1);
-  matrix.drawPixel(2, 0, color_level_2);
-  matrix.drawPixel(4, 0, color_level_3);
-  matrix.drawPixel(6, 0, color_level_4);
+  // matrix.fillScreen(0);
+  // matrix.drawPixel(0, 0, color_level_1);
+  // matrix.drawPixel(2, 0, color_level_2);
+  // matrix.drawPixel(4, 0, color_level_3);
+  // matrix.drawPixel(6, 0, color_level_4);
 
-  matrix.show();
-  delay(100);
+  // matrix.show();
+  // delay(100);
 }

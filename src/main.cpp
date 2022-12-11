@@ -150,21 +150,14 @@ void setup()
   const char *ntpServer = "pool.ntp.org";
   configTime(0, 0, ntpServer);
   delay(5000);
-
-  time_t now = time(nullptr);
-  time_t seven_weeks_ago = now - 7 * 7 * 24 * 60 * 60;
-
-  draw_contribution_graph(seven_weeks_ago, now);
 }
 
 void loop()
 {
-  // matrix.fillScreen(0);
-  // matrix.drawPixel(0, 0, color_level_1);
-  // matrix.drawPixel(2, 0, color_level_2);
-  // matrix.drawPixel(4, 0, color_level_3);
-  // matrix.drawPixel(6, 0, color_level_4);
+  time_t now = time(nullptr);
+  time_t seven_weeks_ago = now - 7 * 7 * 24 * 60 * 60;
 
-  // matrix.show();
-  // delay(100);
+  draw_contribution_graph(seven_weeks_ago, now);
+
+  delay(60 * 60); // refresh every hour
 }

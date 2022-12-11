@@ -60,8 +60,11 @@ void init_WiFi()
   Serial.println(WiFi.localIP());
 }
 
-JsonArray get_github_contribution_weeks(String from, String to)
+JsonArray get_github_contribution_weeks(time_t from, time_t to)
 {
+  String date_from = get_ISO8601_time(from);
+  String date_to = get_ISO8601_time(to);
+
   HTTPClient http;
   http.useHTTP10(true);
   http.begin("https://api.github.com/graphql", ca_cert);
@@ -69,7 +72,7 @@ JsonArray get_github_contribution_weeks(String from, String to)
   Serial.println("Sending request... ");
 
   String login = GITHUB_USERNAME;
-  String query = "{\"query\" : \"query($login:String!,$from:DateTime!,$to:DateTime!){user(login:$login){contributionsCollection(from:$from,to:$to){contributionCalendar{totalContributions weeks{contributionDays{contributionLevel date}}}}}}\", \"variables\": { \"login\": \"" + login + "\", \"from\": \"" + from + "\", \"to\": \"" + to + "\"}}";
+  String query = "{\"query\" : \"query($login:String!,$from:DateTime!,$to:DateTime!){user(login:$login){contributionsCollection(from:$from,to:$to){contributionCalendar{totalContributions weeks{contributionDays{contributionLevel}}}}}}\", \"variables\": { \"login\": \"" + login + "\", \"from\": \"" + date_from + "\", \"to\": \"" + date_to + "\"}}";
 
   Serial.println(query);
 
@@ -85,7 +88,7 @@ JsonArray get_github_contribution_weeks(String from, String to)
   Serial.print(httpCode);
   Serial.println(" OK");
 
-  DynamicJsonDocument doc(8192);
+  DynamicJsonDocument doc(3072);
 
   DeserializationError err = deserializeJson(doc, http.getStream());
 
@@ -103,26 +106,12 @@ JsonArray get_github_contribution_weeks(String from, String to)
   return weeks;
 }
 
-void setup()
+void draw_contribution_graph(time_t from, time_t to)
 {
-  Serial.begin(115200);
-  matrix.begin();
-  matrix.setBrightness(255);
-  init_WiFi();
-
-  const char *ntpServer = "pool.ntp.org";
-  configTime(0, 0, ntpServer);
-  delay(5000);
-
-  time_t timestamp_now = time(nullptr);
-  time_t timestamp_seven_weeks_ago = timestamp_now - 7 * 7 * 24 * 60 * 60;
-
-  String today = get_ISO8601_time(timestamp_now);
-  String seven_weeks_ago = get_ISO8601_time(timestamp_seven_weeks_ago);
-
-  JsonArray weeks = get_github_contribution_weeks(seven_weeks_ago, today);
+  JsonArray weeks = get_github_contribution_weeks(from, to);
 
   matrix.fillScreen(0);
+  matrix.show();
 
   unsigned short week_index = 0;
 
@@ -130,29 +119,42 @@ void setup()
   {
     JsonArray contribution_days = week["contributionDays"];
 
-    Serial.print("week");
-    Serial.println(week_index);
-
     unsigned short day_index = 0;
 
     for (JsonObject contribution_day : contribution_days)
     {
-      Serial.print("day");
-      Serial.println(day_index);
       String contribution_level = contribution_day["contributionLevel"];
       String date = contribution_day["date"];
-      Serial.println(date);
-      Serial.println(contribution_level);
       uint16_t color_level = color_map.at(contribution_level);
-      Serial.println(color_level);
       matrix.drawPixel(week_index, 7 - day_index, color_level);
+      delay(100);
+      matrix.show();
 
       ++day_index;
     }
     ++week_index;
   }
+}
 
+void setup()
+{
+  Serial.begin(115200);
+
+  matrix.begin();
+  matrix.setBrightness(255);
+  matrix.fillScreen(0);
   matrix.show();
+
+  init_WiFi();
+
+  const char *ntpServer = "pool.ntp.org";
+  configTime(0, 0, ntpServer);
+  delay(5000);
+
+  time_t now = time(nullptr);
+  time_t seven_weeks_ago = now - 7 * 7 * 24 * 60 * 60;
+
+  draw_contribution_graph(seven_weeks_ago, now);
 }
 
 void loop()

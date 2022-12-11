@@ -128,13 +128,12 @@ void draw_contribution_graph(time_t from, time_t to)
       String date = contribution_day["date"];
       uint16_t color_level = color_map.at(contribution_level);
       matrix.drawPixel(week_index, 7 - day_index, color_level);
-      delay(100);
-      matrix.show();
 
       ++day_index;
     }
     ++week_index;
   }
+  matrix.show();
 }
 
 void setup()

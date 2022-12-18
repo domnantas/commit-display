@@ -10,7 +10,7 @@
 #include "secrets.h"
 #include "ca_cert.h"
 
-#define PIN 4
+#define PIN 13
 
 #define GITHUB_USERNAME "domnantas"
 

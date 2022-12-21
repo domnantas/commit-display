@@ -15,7 +15,7 @@
 #define GITHUB_USERNAME "domnantas"
 
 Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(8, 8, PIN,
-                                               NEO_MATRIX_TOP + NEO_MATRIX_RIGHT +
+                                               NEO_MATRIX_BOTTOM + NEO_MATRIX_RIGHT +
                                                    NEO_MATRIX_COLUMNS + NEO_MATRIX_ZIGZAG,
                                                NEO_GRB + NEO_KHZ800);
 
@@ -48,7 +48,7 @@ String get_ISO8601_time(time_t timestamp)
 
 void draw_loading_indicator(int step)
 {
-  matrix.fill(0);
+  matrix.fillScreen(0);
   switch (step)
   {
   case 0:
@@ -74,6 +74,24 @@ void draw_loading_indicator(int step)
   matrix.show();
 }
 
+void draw_scrolling_text(String text, uint16_t color, double speed)
+{
+  const int charWidth = 6;
+  int textWidth = text.length() * charWidth;
+  int cursor = matrix.width();
+
+  matrix.setTextColor(color);
+
+  while (--cursor > -textWidth - matrix.width())
+  {
+    matrix.fillScreen(0);
+    matrix.setCursor(cursor, 0);
+    matrix.print(text);
+    matrix.show();
+    delay(300 / speed);
+  }
+}
+
 int init_WiFi()
 {
   WiFi.mode(WIFI_STA);
@@ -93,12 +111,15 @@ int init_WiFi()
     if (WiFi.status() == WL_NO_SSID_AVAIL)
     {
       Serial.println("SSID not found");
+
+      draw_scrolling_text("SSID not found", matrix.Color(150, 0, 0), 3.0);
       return 1;
     }
 
     if (WiFi.status() == WL_CONNECT_FAILED || attempt_count > 20)
     {
-      Serial.println("WIFI connection failed.");
+      Serial.println("WIFI connection failed");
+      draw_scrolling_text("WIFI connection failed", matrix.Color(150, 0, 0), 3.0);
       return 1;
     }
   }
@@ -205,10 +226,10 @@ void setup()
 
 void loop()
 {
-  time_t now = time(nullptr);
-  time_t seven_weeks_ago = now - 7 * 7 * 24 * 60 * 60;
+  // time_t now = time(nullptr);
+  // time_t seven_weeks_ago = now - 7 * 7 * 24 * 60 * 60;
 
-  draw_contribution_graph(seven_weeks_ago, now);
+  // draw_contribution_graph(seven_weeks_ago, now);
 
-  delay(60 * 60 * 1000); // refresh every hour
+  // delay(60 * 60 * 1000); // refresh every hour
 }
